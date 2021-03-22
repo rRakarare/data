@@ -12,21 +12,19 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { CSVReader } from "react-papaparse";
-import { Form, Col, Button, Table } from "react-bootstrap";
+import { Form, Row, Col, Button, Table } from "react-bootstrap";
 import { SketchPicker } from "react-color";
+import { saveAs } from 'file-saver';
+import RangeSlider from 'react-bootstrap-range-slider';
 
 function Personal() {
-  const [keys, setkeys] = useState([
-    {
-      name: "",
-      color: [0, 0, 0],
-    },
-  ]);
+  const [tableData, setTableData] = useState([['',0,0,{r:0,g:0,b:0,a:0},false]]);
+
   const createPersonMaskShape = (x, y, width, height, anzahlPers, sc) => {
     let pathString = "";
     for (let i = 1; i < anzahlPers + 1; i++) {
       pathString += `M${x - (width * 1) / 2 - (10.583 * sc) / 2},${
-        y - 0.4 + height - sc * 31.75 * i
+        y + height - sc * 31.75 * i
       }v ${sc * 7.713741} c 0,${sc * -1.8338377} ${sc * 2.649874},${
         sc * -1.8338305
       } ${sc * 5.291667},${sc * -1.8365803} ${sc * 2.649642},${sc * -0.00273} ${
@@ -157,7 +155,7 @@ function Personal() {
         y + height - addHeight
       }
         l 0 -${newheight}
-        l ${10.2 * sc} 0
+        l ${10.583 * sc} 0
         l 0 ${newheight}
         Z`;
     });
@@ -180,7 +178,7 @@ function Personal() {
   };
 
   const PersonBar = (props) => {
-    const { fill, x, y, width, height, keyname, anzahl } = props;
+    const { fill,fillOpacity, x, y, width, height, keyname, anzahl } = props;
 
     const anzahlPers = anzahl[keyname];
 
@@ -189,12 +187,13 @@ function Personal() {
         d={getPath(x, y, width, height, anzahlPers)}
         stroke="none"
         fill={fill}
+        fillOpacity={fillOpacity}
       />
     );
   };
 
   const FillBar = (props) => {
-    const { fill, x, y, width, height, keyname, vk, anzahl } = props;
+    const { fill ,fillOpacity, x, y, width, height, keyname, vk, anzahl } = props;
 
     const vkArray = vk[keyname];
     const anzahlPers = anzahl[keyname];
@@ -204,32 +203,35 @@ function Personal() {
         d={getVkPath(x, y, width, height, vkArray, anzahlPers)}
         stroke="none"
         fill={fill}
+        fillOpacity={fillOpacity}
       />
     );
   };
 
-  const AnzahlBars = keys.map((key) => (
+  const AnzahlBars = tableData.map((key) => (
     <Bar
-      dataKey={(data) => data.anzahl[key.name]}
-      shape={<PersonBar keyname={key.name} />}
-      fill={createColor(key.color, 0.2)}
+      dataKey={(data) => data.anzahl[key[0]]}
+      shape={<PersonBar keyname={key[0]} />}
+      fill={`rgb(${key[3].r},${key[3].g},${key[3].b})`}
+      fillOpacity={0.2}
       stackId="a"
     />
   ));
 
-  const FillBars = keys.map((key) => (
+  const FillBars = tableData.map((key) => (
     <Bar
-      dataKey={(data) => data.anzahl[key.name]}
-      shape={<FillBar keyname={key.name} />}
-      fill={createColor(key.color, 0.9)}
+      dataKey={(data) => data.anzahl[key[0]]}
+      shape={<FillBar keyname={key[0]} />}
+      fill={`rgb(${key[3].r},${key[3].g},${key[3].b})`}
+      fillOpacity={1}
       stackId="b"
     />
   ));
 
-  const MaskBars = keys.map((key) => (
+  const MaskBars = tableData.map((key) => (
     <Bar
-      dataKey={(data) => data.anzahl[key.name]}
-      shape={<MaskBar keyname={key.name} />}
+      dataKey={(data) => data.anzahl[key[0]]}
+      shape={<MaskBar keyname={key[0]} />}
       fill="white"
       stackId="c"
     />
@@ -242,8 +244,13 @@ function Personal() {
   const handleOnDrop = (data) => {
     setDataset(data);
     setbereichsauswahl(data[0].data);
+    setBereichCol(data[0].data[0]);
+
     setalterauswahl(data[0].data);
+    setAlterCol(data[0].data[1])
+
     setvkauswahl(data[0].data);
+    setVkCol(data[0].data[2])
   };
 
   const handleOnRemoveFile = (data) => {
@@ -255,7 +262,7 @@ function Personal() {
   const [dataset, setDataset] = useState({});
   const [data, setData] = useState([]);
 
-  const [tableData, setTableData] = useState([["mta", 10, 8.5, "red"]]);
+
 
   const [bereichsauswahl, setbereichsauswahl] = useState([]);
   const [bereichCol, setBereichCol] = useState("");
@@ -287,32 +294,37 @@ function Personal() {
 
     const keysunique = new Set(allKeys);
 
-    const keys = Array.from(keysunique);
+    const keysliste = Array.from(keysunique);
 
-    setkeys(
-      keys.map((item) => {
-        return {
-          name: item,
-          color: [250, 100, 100],
-        };
-      })
-    );
+    const newkeys = keysliste.map((item) => {
+      return {
+        name: item,
+        color: {
+          r:Math.floor(Math.random() * 256),
+          g:Math.floor(Math.random() * 256),
+          b:Math.floor(Math.random() * 256),
+          a:1,
+        },
+      };
+    })
+
 
     setTableData(
-      keys.map((item) => {
+      newkeys.map((item) => {
         return [
-          item,
-          newDataset.filter((it) => it.data[bereichsIndex] == item).length,
+          item.name,
+          newDataset.filter((it) => it.data[bereichsIndex] == item.name).length,
           newDataset
-            .filter((it) => it.data[bereichsIndex] == item)
+            .filter((it) => it.data[bereichsIndex] == item.name)
             .map((newit) => parseFloat(newit.data[vkIndex].replace(",", ".")))
             .reduce((a, b) => a + b, 0),
           {
-            r: Math.floor(Math.random() * 256),
-            g: Math.floor(Math.random() * 256),
-            b: Math.floor(Math.random() * 256),
+            r: item.color.r,
+            g: item.color.g,
+            b: item.color.b,
             a: 1,
           },
+          false
         ];
       })
     );
@@ -333,14 +345,14 @@ function Personal() {
 
     const newData = ages.map((item) => {
       let anzahlobj = {};
-      keys.forEach((key) => {
+      keysliste.forEach((key) => {
         anzahlobj[key] = newDataset.filter(
           (i) => i.data[bereichsIndex] == key && i.data[altersIndex] == item
         ).length;
       });
 
       let vkobj = {};
-      keys.forEach((key) => {
+      keysliste.forEach((key) => {
         vkobj[key] = newDataset
           .filter(
             (i) => i.data[bereichsIndex] == key && i.data[altersIndex] == item
@@ -361,31 +373,66 @@ function Personal() {
     console.log(newData);
   };
 
-  const handleChange = (color, e) => {
-    console.log(e);
-    console.log(color);
+  const handleChange = index => color => {
+    console.log(color.rgb)
+    tableData[index][3]=color.rgb
+    setTableData([...tableData])
+    
+
+
   };
 
-  const TableInsert = tableData.map((item) => (
+  const handleclick = index => () => {
+    tableData[index][4] = !tableData[index][4]
+    setTableData([...tableData])
+  }
+
+  const handleClose = index => () => {
+    tableData[index][4] = false
+    setTableData([...tableData])
+  }
+
+  const TableInsert = tableData.map((item,index) => (
     <tr>
       {item.map((element, i) =>
         i == 3 ? (
           <td>
+            <Button size="sm" style={{background:`rgba(${tableData[index][3].r},${tableData[index][3].g},${tableData[index][3].b},${tableData[index][3].a})`}} onClick={handleclick(index)}>Choose</Button>
+            {tableData[index][4] ?
+            <div style={{position:"absolute", zIndex: '2'}}>
+              <div style={{position: 'fixed',top: '0px',right: '0px',bottom: '0px',left: '0px'}} onClick={ handleClose(index) }/>
             <SketchPicker
-              className="heip"
+              name = {'asdqwe'}
               color={element}
               asdqwe={i}
-              onChange={handleChange}
+              onChange={handleChange(`${index}`)}
             />
+            </div>
+            
+             : null}
+
           </td>
-        ) : (
+        ): i == 4 ? null : (
           <td>{element}</td>
         )
       )}
     </tr>
   ));
 
-  useEffect(() => {}, [setData]);
+  const dlGraph = () => {
+    const graph = document.querySelector('.recharts-surface')
+    console.log(graph)
+    let svgURL = new XMLSerializer().serializeToString(graph);
+      let svgBlob = new Blob([svgURL], {type: "image/svg+xml;charset=utf-8"});
+      saveAs(svgBlob, "altersstruktur.svg");
+  }
+
+  const [graphheight, setGraphheight] = useState(300)
+
+  useEffect(() => {
+    console.log(graphheight)
+  }, [tableData, graphheight]);
+
 
   return (
     <>
@@ -407,6 +454,7 @@ function Personal() {
             <Form.Control
               as="select"
               custom
+              value={bereichCol}
               onChange={(e) => setBereichCol(e.target.value)}
             >
               {bereichsauswahl.map((item) => (
@@ -420,6 +468,7 @@ function Personal() {
             <Form.Control
               as="select"
               custom
+              value={alterCol}
               onChange={(e) => setAlterCol(e.target.value)}
             >
               {alterauswahl.map((item) => (
@@ -432,6 +481,7 @@ function Personal() {
             <Form.Control
               as="select"
               custom
+              value={vkCol}
               onChange={(e) => setVkCol(e.target.value)}
             >
               {vkauswahl.map((item) => (
@@ -452,7 +502,9 @@ function Personal() {
         Proceed
       </Button>
 
-      <Table striped bordered hover>
+
+
+      <Table striped bordered hover size="sm">
         <thead>
           <tr>
             <th>Bereich</th>
@@ -464,10 +516,16 @@ function Personal() {
         <tbody>{TableInsert}</tbody>
       </Table>
 
-      <ResponsiveContainer width={"100%"} height={300}>
+      <div className="my-2 text-center">
+      <RangeSlider value={graphheight} size="lg" min={10} max={1000} onChange={changeEvent => setGraphheight(changeEvent.target.value)}/>
+  <Button block onClick={dlGraph}>Download</Button>
+      </div>
+
+
+
+    <div style={{height:`${graphheight}px`, width:'100%'}}>
+      <ResponsiveContainer width={"100%"} height={'100%'}>
         <BarChart
-          width={500}
-          height={300}
           data={data}
           margin={{
             top: 20,
@@ -485,6 +543,7 @@ function Personal() {
           {MaskBars}
         </BarChart>
       </ResponsiveContainer>
+      </div>
     </>
   );
 }
