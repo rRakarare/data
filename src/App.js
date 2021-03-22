@@ -1,11 +1,14 @@
-import Header from './components/Header'
-import Personal from './components/Personal'
+import Header from "./components/Header";
+import Personal from "./components/Personal";
+import { Container } from "react-bootstrap";
 
 function App() {
   return (
     <div className="App">
-      <Header/>
-      <Personal/>
+      <Header />
+      <Container>
+        <Personal />
+      </Container>
     </div>
   );
 }
