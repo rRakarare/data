@@ -125,7 +125,7 @@ function Personal() {
   const getMaskPath = (x, y, width, height, anzahlPers) => {
     const oneunit = height / anzahlPers;
 
-    const sc = oneunit / 31.75;
+    const sc = oneunit / 31.81;
 
     return createPersonMaskShape(x, y, width, height, anzahlPers, sc);
   };
@@ -133,7 +133,7 @@ function Personal() {
   const getPath = (x, y, width, height, anzahlPers) => {
     const oneunit = height / anzahlPers;
 
-    const sc = oneunit / 31.75;
+    const sc = oneunit / 31.81;
 
     return createPersonShape(x, y, width, height, anzahlPers, sc);
   };
@@ -143,7 +143,7 @@ function Personal() {
 
     const oneunit = height / anzahlPers;
 
-    const sc = oneunit / 31.75 / 1.05;
+    const sc = oneunit / 31.81;
 
     vkArray.forEach((item, i) => {
       const newheight = item * oneunit;
@@ -153,7 +153,7 @@ function Personal() {
         addHeight = oneunit * i;
       }
 
-      path += `M${x + (width * 3) / 2 - (10.538 * sc) / 2},${
+      path += `M${x + (width * 3) / 2 - (10.2 * sc) / 2},${
         y + height - addHeight
       }
         l 0 -${newheight}
@@ -163,6 +163,14 @@ function Personal() {
     });
 
     return path;
+  };
+
+  const getPath2 = (x, y, width, height) => {
+    return `M${x},${y + height}
+    l 0 -${height}
+    l ${width} 0
+    l 0 ${height}
+    Z`;
   };
 
   const MaskBar = (props) => {
@@ -187,6 +195,7 @@ function Personal() {
     return (
       <path
         d={getPath(x, y, width, height, anzahlPers)}
+        transform="scale(1.0)"
         stroke="none"
         fill={fill}
         fillOpacity={fillOpacity}
@@ -560,8 +569,8 @@ function Personal() {
             barGap={"0%"}
           >
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis tickMargin={4} dataKey="name" />
-            <YAxis tickMargin={4} padding={{ bottom: 10 }} />
+            <XAxis dataKey="name" />
+            <YAxis tick={[0, 1, 2, 3, 4, 5, 6, 7]} interval={0} />
             {FillBars}
             {AnzahlBars}
             {MaskBars}
