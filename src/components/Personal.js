@@ -10,6 +10,8 @@ import {
   YAxis,
   CartesianGrid,
   ResponsiveContainer,
+  ReferenceLine,
+  LabelList
 } from "recharts";
 import { CSVReader } from "react-papaparse";
 import { Form, Row, Col, Button, Table } from "react-bootstrap";
@@ -220,14 +222,28 @@ function Personal() {
     );
   };
 
-  const AnzahlBars = tableData.map((key) => (
+  const renderCustomizedLabel = (props) => {
+    const { x, y, width, height, value } = props;
+    return (
+      <g>
+        <text x={x + width / 2} y={y-10} fontSize="1rem" fontWeight="1000" fill="black" textAnchor="middle" dominantBaseline="middle">
+          {isNaN(parseFloat(value)) ? "": parseFloat(value).toFixed(1)}
+        </text>
+      </g>
+    );
+  }
+
+  const AnzahlBars = tableData.map((key,i) => (
     <Bar
       dataKey={(data) => data.anzahl[key[0]]}
       shape={<PersonBar keyname={key[0]} />}
       fill={`rgb(${key[3].r},${key[3].g},${key[3].b})`}
       fillOpacity={0.2}
-      stackId="a"
-    />
+      stackId="a">
+        {i === tableData.length - 1 ? 
+        <LabelList dataKey={(data) => data.labelValue} content={renderCustomizedLabel} position="top" />
+      : null}
+    </Bar>
   ));
 
   const FillBars = tableData.map((key) => (
@@ -271,8 +287,8 @@ function Personal() {
     console.log("---------------------------");
   };
 
-  const [dataset, setDataset] = useState({});
-  const [data, setData] = useState([]);
+  const [dataset, setDataset] = useState(null);
+  const [data, setData] = useState(null);
 
   const [bereichsauswahl, setbereichsauswahl] = useState([]);
   const [bereichCol, setBereichCol] = useState("");
@@ -281,7 +297,13 @@ function Personal() {
   const [alterCol, setAlterCol] = useState("");
 
   const [vkauswahl, setvkauswahl] = useState([]);
-  const [vkCol, setVkCol] = useState();
+  const [vkCol, setVkCol] = useState(null);
+
+  const [minAge, setMinAge] = useState(null);
+  const [maxAge, setmaxAge] = useState(null);
+  const [fontSize, setFontSize] = useState(null);
+
+  const [graphheight, setGraphheight] = useState(300);
 
   const createData = () => {
     const csvcols = dataset[0].data.length;
@@ -289,18 +311,21 @@ function Personal() {
     const bereichsIndex = dataset[0].data.findIndex(
       (item) => item == bereichCol
     );
+
     const altersIndex = dataset[0].data.findIndex((item) => item == alterCol);
     const vkIndex = dataset[0].data.findIndex((item) => item == vkCol);
 
-    dataset.shift();
 
     const newDataset = dataset.filter((item) => item.data.length == csvcols);
 
-    console.log(newDataset);
+
+    newDataset.shift()    
+
 
     const allKeys = newDataset.map((item, i) => {
       return item.data[bereichsIndex];
     });
+
 
     const keysunique = new Set(allKeys);
 
@@ -318,6 +343,7 @@ function Personal() {
       };
     });
 
+
     setTableData(
       newkeys.map((item) => {
         return [
@@ -326,7 +352,7 @@ function Personal() {
           newDataset
             .filter((it) => it.data[bereichsIndex] == item.name)
             .map((newit) => parseFloat(newit.data[vkIndex].replace(",", ".")))
-            .reduce((a, b) => a + b, 0),
+            .reduce((a, b) => a + b, 0).toFixed(2),
           {
             r: item.color.r,
             g: item.color.g,
@@ -342,13 +368,20 @@ function Personal() {
       return parseInt(item.data[altersIndex], 10);
     });
 
-    console.log(allAges);
+    let min = Math.min(...allAges)
+    let max = Math.max(...allAges)
 
-    const minAge = Math.min(...allAges);
-    const maxAge = Math.max(...allAges);
+    if (minAge) {
+      min = minAge
+    }
+
+    if (maxAge) {
+      max = maxAge
+    } 
+
 
     var ages = [];
-    for (var i = minAge; i <= maxAge; i++) {
+    for (var i = min; i <= max; i++) {
       ages.push(i);
     }
 
@@ -371,19 +404,25 @@ function Personal() {
           );
       });
 
+      const arr = []
+
+      Object.values(vkobj).forEach(item => item.map(i => arr.push(i)))
+      const lval = arr.reduce((a,b)=>a+b,0).toFixed(2)
+
       return {
         name: item,
         anzahl: anzahlobj,
         vk: vkobj,
+        labelPosition: Object.values(anzahlobj).reduce((a,b)=>a+b,0),
+        labelValue: lval == 0 ? null : lval
       };
     });
 
     setData(newData);
-    console.log(newData);
+
   };
 
   const handleChange = (index) => (color) => {
-    console.log(color.rgb);
     tableData[index][3] = color.rgb;
     setTableData([...tableData]);
   };
@@ -442,17 +481,19 @@ function Personal() {
 
   const dlGraph = () => {
     const graph = document.querySelector(".recharts-surface");
-    console.log(graph);
     let svgURL = new XMLSerializer().serializeToString(graph);
     let svgBlob = new Blob([svgURL], { type: "image/svg+xml;charset=utf-8" });
     saveAs(svgBlob, "altersstruktur.svg");
   };
 
-  const [graphheight, setGraphheight] = useState(300);
+  
 
   useEffect(() => {
-    console.log(graphheight);
-  }, [tableData, graphheight]);
+    if(dataset!=null) {
+      createData()
+    }
+    
+  }, [graphheight, minAge, maxAge]);
 
   return (
     <>
@@ -510,7 +551,16 @@ function Personal() {
             </Form.Control>
           </Col>
         </Form.Row>
+        <Form.Row className="mt-3">
+        <Col>
+          <Form.Control value={minAge} onChange={e=>setMinAge(parseInt(e.target.value))} placeholder="Min. Age" type="number" />
+        </Col>
+        <Col>
+          <Form.Control value={maxAge} onChange={e=>setmaxAge(e.target.value)} placeholder="Max. Age" type="number" />  
+        </Col>
+      </Form.Row>
       </Form>
+
       <Button
         className="my-3"
         variant="info"
@@ -534,18 +584,22 @@ function Personal() {
         <tbody>{TableInsert}</tbody>
       </Table>
 
-      <div className="my-2 text-center">
-        <RangeSlider
-          value={graphheight}
-          size="lg"
-          min={10}
-          max={1000}
-          onChange={(changeEvent) => setGraphheight(changeEvent.target.value)}
-        />
-        <Button block onClick={dlGraph}>
-          Download
+      <Row className="my-3">
+        <Col>
+          <Form.Control min="10" max="1000" placeholder="Graph Height" type="number" />
+        </Col>
+        <Col>
+          <Form.Control min="0" max="100" placeholder="Font-Size VK in %" type="number" />  
+        </Col>
+        <Col>
+        <Button variant="success" block onClick={dlGraph}>
+          Download Graph
         </Button>
-      </div>
+        </Col>
+      </Row>
+
+        
+
 
       <div style={{ height: `${graphheight}px`, width: "100%" }}>
         <ResponsiveContainer width={"100%"} height={"100%"}>
@@ -560,8 +614,9 @@ function Personal() {
             barGap={"0%"}
           >
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis tickMargin={4} dataKey="name" />
-            <YAxis tickMargin={4} padding={{ bottom: 10 }} />
+            <ReferenceLine x={2} label="L1"/>
+            <XAxis tickMargin={4} padding={{ left: 10, right:10 }} dataKey="name" />
+            <YAxis tickMargin={4} padding={{ bottom: 10}} />
             {FillBars}
             {AnzahlBars}
             {MaskBars}
