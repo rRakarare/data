@@ -502,6 +502,7 @@ function Personal() {
                   color={element}
                   asdqwe={i}
                   onChange={handleChange(`${index}`)}
+                  presetColors={['#2089C6', '#459382', '#632B30', '#EB9E69', '#519599', '#004D75']}
                 />
               </div>
             ) : null}

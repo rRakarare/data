@@ -9,6 +9,7 @@
     "bootstrap": "^4.6.0",
     "d3": "^6.6.0",
     "file-saver": "^2.0.5",
+    "gh-pages": "^3.1.0",
     "material-ui-color-picker": "^3.5.1",
     "react": "^17.0.1",
     "react-bootstrap": "^1.5.2",
@@ -21,6 +22,8 @@
     "web-vitals": "^1.1.1"
   },
   "scripts": {
+     "predeploy": "npm run build",
+   "deploy": "gh-pages -d build",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
@@ -43,5 +46,6 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "homepage": "https://rRakarare.github.io/data"
 }
