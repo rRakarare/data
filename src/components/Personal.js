@@ -2,15 +2,10 @@ import React, { useState, useEffect } from "react";
 import {
   BarChart,
   Bar,
-  Cell,
-  LineChart,
-  Line,
   XAxis,
-  Tooltip,
   YAxis,
   CartesianGrid,
   ResponsiveContainer,
-  ReferenceLine,
   LabelList,
 } from "recharts";
 import { CSVReader } from "react-papaparse";
@@ -197,17 +192,8 @@ function Personal() {
   };
 
   const FillBar = (props) => {
-    const {
-      fill,
-      fillOpacity,
-      x,
-      y,
-      width,
-      height,
-      keyname,
-      vk,
-      anzahl,
-    } = props;
+    const { fill, fillOpacity, x, y, width, height, keyname, vk, anzahl } =
+      props;
 
     const vkArray = vk[keyname];
     const anzahlPers = anzahl[keyname];
@@ -230,12 +216,13 @@ function Personal() {
           x={x + width / 2}
           y={y - 10}
           fontSize={`${fontSize / 100}rem`}
-          fontWeight="1000"
+          fontWeight="600"
+          fontFamily= 'Roboto'
           fill="black"
           textAnchor="middle"
           dominantBaseline="middle"
         >
-          {isNaN(parseFloat(value)) ? "" : parseFloat(value).toFixed(1)}
+          {isNaN(parseFloat(value)) ? "" : parseFloat(value).toFixed(digits)}
         </text>
       </g>
     );
@@ -315,6 +302,7 @@ function Personal() {
   const [minAge, setMinAge] = useState(null);
   const [maxAge, setmaxAge] = useState(null);
   const [fontSize, setFontSize] = useState(100);
+  const [digits, setDigits] = useState(1);
 
   const [graphheight, setGraphheight] = useState(300);
 
@@ -502,7 +490,14 @@ function Personal() {
                   color={element}
                   asdqwe={i}
                   onChange={handleChange(`${index}`)}
-                  presetColors={['#2089C6', '#459382', '#632B30', '#EB9E69', '#519599', '#004D75']}
+                  presetColors={[
+                    "#2089C6",
+                    "#459382",
+                    "#632B30",
+                    "#EB9E69",
+                    "#519599",
+                    "#004D75",
+                  ]}
                 />
               </div>
             ) : null}
@@ -615,6 +610,7 @@ function Personal() {
 
           <Row className="my-3">
             <Col>
+            <Form.Label>Graph-Height</Form.Label>
               <Form.Control
                 min="10"
                 max="1000"
@@ -625,6 +621,7 @@ function Personal() {
               />
             </Col>
             <Col>
+            <Form.Label>Font-Size [%]</Form.Label>
               <Form.Control
                 min="0"
                 max="100"
@@ -636,6 +633,7 @@ function Personal() {
             </Col>
 
             <Col>
+            <Form.Label>Min. Alter</Form.Label>
               <Form.Control
                 value={minAge}
                 onChange={(e) => setMinAge(parseInt(e.target.value))}
@@ -644,6 +642,7 @@ function Personal() {
               />
             </Col>
             <Col>
+            <Form.Label>Max. Alter</Form.Label>
               <Form.Control
                 value={maxAge}
                 onChange={(e) => setmaxAge(e.target.value)}
@@ -652,8 +651,19 @@ function Personal() {
               />
             </Col>
             <Col>
-              <Button variant="success" block onClick={dlGraph}>
-                Download Graph
+            <Form.Label>Digits (VK)</Form.Label>
+              <Form.Control
+                value={digits}
+                onChange={(e) => setDigits(e.target.value)}
+                max={3}
+                min={1}
+                placeholder="Digits VK"
+                type="number"
+              />
+            </Col>
+            <Col>
+              <Button size="md" variant="success" block onClick={dlGraph}>
+                Download
               </Button>
             </Col>
           </Row>
@@ -677,6 +687,7 @@ function Personal() {
                   dataKey="name"
                 />
                 <YAxis tickMargin={4} padding={{ bottom: 10 }} />
+
                 {FillBars}
                 {AnzahlBars}
                 {MaskBars}
